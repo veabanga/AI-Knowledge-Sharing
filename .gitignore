@@ -1,0 +1,10 @@
+node_modules/
+.svelte-kit/
+apps/frontend/build/
+apps/frontend/.svelte-kit/
+services/backend/target/
+services/backend/.idea/
+.pyc
+__pycache__/
+.env
+.vscode/
