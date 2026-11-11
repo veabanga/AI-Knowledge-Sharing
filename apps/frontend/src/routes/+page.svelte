@@ -1,186 +1,73 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { apiGet, type DashboardOverview, type ProjectRecord } from '$lib/api';
-  import { metrics as demoMetrics, projects as demoProjects, knowledgeDashboard, decisions as demoDecisions, type Metric } from '$lib/demo';
-
-  let loading = true;
-  let loadError = '';
-  let usingDemo = false;
-  let dashboardMetrics: Metric[] = [];
-  let recentKnowledge: DashboardOverview['recentKnowledge'] = [];
-  let recentDecisions: DashboardOverview['recentDecisions'] = [];
-  let projectList: ProjectRecord[] = [];
-
-  async function loadDashboard() {
-    loading = true;
-    loadError = '';
-    usingDemo = false;
-    try {
-      const [overview, projects] = await Promise.all([
-        apiGet<DashboardOverview>('/api/overview'),
-        apiGet<ProjectRecord[]>('/api/projects')
-      ]);
-      dashboardMetrics = [
-        { label: 'Total knowledge records', value: overview.totalKnowledgeRecords.toLocaleString(), delta: 'live API data', tone: 'teal' },
-        { label: 'Active projects', value: String(overview.activeProjects), delta: 'live API data', tone: 'blue' },
-        { label: 'Connected departments', value: String(overview.connectedDepartments), delta: `${overview.crossDepartmentRelationships} cross-department links`, tone: 'amber' },
-        { label: 'Pending validations', value: String(overview.pendingValidations), delta: `${overview.criticalKnowledgeGaps} critical gaps`, tone: 'slate' }
-      ];
-      recentKnowledge = overview.recentKnowledge ?? [];
-      recentDecisions = overview.recentDecisions ?? [];
-      projectList = projects ?? [];
-    } catch (error) {
-      loadError = error instanceof Error ? error.message : 'Unable to load dashboard data.';
-      dashboardMetrics = [];
-      recentKnowledge = [];
-      recentDecisions = [];
-      projectList = [];
-    } finally {
-      loading = false;
-    }
-  }
-
-  function loadDemoData() {
-    usingDemo = true;
-    loadError = '';
-    dashboardMetrics = demoMetrics;
-    recentKnowledge = knowledgeDashboard.map((item) => ({
-      title: item.title,
-      knowledgeType: item.type,
-      project: item.project,
-      status: item.status
-    }));
-    recentDecisions = demoDecisions;
-    projectList = demoProjects.map((project) => ({
-      ...project,
-      description: '',
-      employees: []
-    }));
-  }
-
-  const progressStyles = (value: number) => `width: ${value}%`;
-
-  onMount(() => {
-    void loadDashboard();
-  });
+  import { base } from '$app/paths';
+  import { ArrowRight, BookOpenCheck, Network, Search, ShieldCheck, Sparkles } from 'lucide-svelte';
+  import { knowledgeDepartments, knowledgeProjects, knowledgeRecords, suggestedSearches } from '$lib/knowledge';
 </script>
 
 <svelte:head>
-  <title>Nexus Knowledge | Overview</title>
+  <title>Nexus Knowledge | Engineering knowledge, reused</title>
+  <meta name="description" content="Find proven engineering knowledge across projects with the Nexus Knowledge browser demo." />
 </svelte:head>
 
-<div class="space-y-8">
-  <header class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-    <div>
-      <p class="text-sm font-medium uppercase tracking-[0.18em] text-slate-500">Executive overview</p>
-      <h2 class="mt-2 text-3xl font-semibold text-slate-900">Organisational memory at a glance</h2>
+<div class="mx-auto max-w-[1400px] space-y-8">
+  <section class="relative overflow-hidden rounded-3xl bg-navy px-6 py-9 text-white shadow-panel md:px-10 md:py-12">
+    <div class="absolute -right-16 -top-20 h-72 w-72 rounded-full border border-teal-300/10"></div>
+    <div class="absolute -right-4 -top-8 h-48 w-48 rounded-full border border-teal-300/15"></div>
+    <div class="relative max-w-3xl">
+      <div class="inline-flex items-center gap-2 rounded-full border border-teal-300/25 bg-teal-300/10 px-3 py-1.5 text-xs font-medium text-teal-200"><Sparkles size={14} /> Auron Mobility engineering knowledge demo</div>
+      <h1 class="mt-6 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">Your engineering organisation has solved this problem before.<br /><span class="text-teal-300">Find out how.</span></h1>
+      <p class="mt-5 max-w-2xl text-base leading-7 text-slate-300">Nexus helps engineering teams find previous problems, root causes, validated solutions and lessons across projects—so they can build on what the organisation already knows.</p>
+      <a href={`${base}/discovery/`} class="mt-8 inline-flex items-center gap-2 rounded-xl bg-teal-400 px-5 py-3 text-sm font-semibold text-navy transition hover:bg-teal-300">
+        Explore the live demo <ArrowRight size={17} />
+      </a>
+      <p class="mt-3 text-xs text-slate-400">No login, backend, or API key required. Searches run locally in your browser.</p>
     </div>
-    <button class="rounded-xl bg-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600" disabled title="Handover generation is not implemented yet">Handover snapshot unavailable</button>
-  </header>
+  </section>
 
-  {#if loadError}
-    <div role="alert" class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-      <div class="font-semibold">Dashboard data could not be loaded</div>
-      <div class="mt-1">{loadError}</div>
-      <div class="mt-3 flex gap-2">
-        <button class="rounded-lg border border-red-300 bg-white px-3 py-1.5 font-medium" on:click={loadDashboard}>Retry API request</button>
-        <button class="rounded-lg bg-red-800 px-3 py-1.5 font-medium text-white" on:click={loadDemoData}>Use demo data</button>
+  <section class="grid gap-4 sm:grid-cols-3" aria-label="Demo dataset overview">
+    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-panel">
+      <div class="flex items-center justify-between"><span class="text-sm text-slate-500">Curated knowledge records</span><BookOpenCheck size={19} class="text-teal-700" /></div>
+      <div class="mt-3 text-3xl font-semibold text-slate-900">{knowledgeRecords.length}</div>
+      <div class="mt-1 text-xs text-slate-500">Problems, decisions, solutions and lessons</div>
+    </div>
+    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-panel">
+      <div class="flex items-center justify-between"><span class="text-sm text-slate-500">Engineering projects</span><Network size={19} class="text-blue-700" /></div>
+      <div class="mt-3 text-3xl font-semibold text-slate-900">{knowledgeProjects.length}</div>
+      <div class="mt-1 text-xs text-slate-500">Connected through reusable engineering evidence</div>
+    </div>
+    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-panel">
+      <div class="flex items-center justify-between"><span class="text-sm text-slate-500">Departments represented</span><ShieldCheck size={19} class="text-violet-700" /></div>
+      <div class="mt-3 text-3xl font-semibold text-slate-900">{knowledgeDepartments.length}</div>
+      <div class="mt-1 text-xs text-slate-500">Mechanical, Electrical, Software and Manufacturing</div>
+    </div>
+  </section>
+
+  <section class="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-panel md:p-7">
+      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-teal-800">The engineering challenge</p>
+      <h2 class="mt-3 text-2xl font-semibold text-slate-900">Knowledge is scattered. Repeated investigation costs time.</h2>
+      <p class="mt-3 text-sm leading-6 text-slate-600">A thermal issue in a new sensor housing may have already been investigated by an electrical team, resolved in another project, and validated in a production test. Nexus brings that evidence into one searchable experience.</p>
+      <div class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div class="flex items-center gap-2 text-sm font-semibold text-slate-800"><Search size={16} class="text-teal-700" /> Start with a real engineering question</div>
+        <p class="mt-3 text-sm italic leading-6 text-slate-700">“{suggestedSearches[0]}”</p>
+        <a href={`${base}/discovery/`} class="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-teal-800 hover:text-teal-950">Find related knowledge <ArrowRight size={15} /></a>
       </div>
     </div>
-  {/if}
-  {#if usingDemo}<div class="text-sm text-amber-800">Showing demo data by explicit request.</div>{/if}
-
-  {#if loading}
-    <div role="status" class="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-panel">Loading dashboard from the Nexus API…</div>
-  {:else}
-    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-      {#each dashboardMetrics as metric}
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-panel">
-          <div class="flex items-center justify-between text-sm text-slate-500">
-            <span>{metric.label}</span>
-            <span class={`rounded-full px-2 py-1 text-xs font-medium ${metric.tone === 'teal' ? 'bg-teal-100 text-teal-700' : metric.tone === 'blue' ? 'bg-blue-100 text-blue-700' : metric.tone === 'amber' ? 'bg-amber-100 text-amber-700' : 'bg-slate-200 text-slate-700'}`}>
-              {metric.delta}
-            </span>
-          </div>
-          <div class="mt-6 text-3xl font-semibold text-slate-900">{metric.value}</div>
-        </div>
-      {/each}
-    </section>
-
-    <section class="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
-      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-panel">
-        <div class="mb-5 flex items-center justify-between">
-          <h3 class="text-xl font-semibold text-slate-900">Recent knowledge capture</h3>
-          <span class="text-sm text-slate-500">{usingDemo ? 'Demo data' : 'Spring Boot API'}</span>
-        </div>
-        <div class="space-y-4">
-          {#each recentKnowledge as item}
-            <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div class="flex items-center justify-between gap-4">
-                <div>
-                  <div class="text-base font-semibold text-slate-900">{item.title}</div>
-                  <div class="mt-1 text-sm text-slate-500">{item.knowledgeType} · {item.project}</div>
-                </div>
-                <span class={`rounded-full px-2 py-1 text-xs font-medium ${item.status === 'validated' ? 'bg-emerald-100 text-emerald-700' : item.status === 'approved' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>{item.status}</span>
-              </div>
-            </div>
-          {:else}
-            <p class="text-sm text-slate-500">No recent knowledge records were returned.</p>
-          {/each}
-        </div>
+    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-panel md:p-7">
+      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Explore the concept</p>
+      <div class="mt-4 space-y-3">
+        <a href={`${base}/discovery/`} class="group flex items-start gap-3 rounded-xl border border-teal-100 bg-teal-50/60 p-4 hover:border-teal-300">
+          <Search size={18} class="mt-0.5 shrink-0 text-teal-800" />
+          <span><span class="block font-semibold text-slate-900">Knowledge Discovery</span><span class="mt-1 block text-sm leading-5 text-slate-600">Search and reuse cross-project solutions. Fully interactive prototype.</span></span>
+          <ArrowRight size={16} class="ml-auto mt-0.5 shrink-0 text-teal-800" />
+        </a>
+        <a href={`${base}/graph/`} class="group flex items-start gap-3 rounded-xl border border-slate-200 p-4 hover:border-slate-300 hover:bg-slate-50">
+          <Network size={18} class="mt-0.5 shrink-0 text-blue-700" />
+          <span><span class="block font-semibold text-slate-900">Knowledge Graph</span><span class="mt-1 block text-sm leading-5 text-slate-600">Inspect sample connections across teams, projects and decisions.</span></span>
+          <ArrowRight size={16} class="ml-auto mt-0.5 shrink-0 text-slate-500" />
+        </a>
       </div>
-
-      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-panel">
-        <h3 class="text-xl font-semibold text-slate-900">Critical knowledge gaps</h3>
-        <div class="mt-5 space-y-4">
-          <div>
-            <div class="mb-2 flex items-center justify-between text-sm text-slate-600"><span>Calibration documentation</span><span>72%</span></div>
-            <div class="h-2 rounded-full bg-slate-100"><div class="h-2 rounded-full bg-teal-500" style={progressStyles(72)}></div></div>
-          </div>
-          <div>
-            <div class="mb-2 flex items-center justify-between text-sm text-slate-600"><span>Manufacturing validation trace</span><span>58%</span></div>
-            <div class="h-2 rounded-full bg-slate-100"><div class="h-2 rounded-full bg-cyan-500" style={progressStyles(58)}></div></div>
-          </div>
-          <div>
-            <div class="mb-2 flex items-center justify-between text-sm text-slate-600"><span>Prototype handoff notes</span><span>41%</span></div>
-            <div class="h-2 rounded-full bg-slate-100"><div class="h-2 rounded-full bg-amber-500" style={progressStyles(41)}></div></div>
-          </div>
-          <p class="text-xs text-slate-500">Gap progress indicators are demonstration-only and are not returned by the API.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="grid gap-6 xl:grid-cols-2">
-      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-panel">
-        <h3 class="text-xl font-semibold text-slate-900">Projects with missing documentation</h3>
-        <div class="mt-5 space-y-4">
-          {#each projectList as project}
-            <div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4">
-              <div class="flex items-center justify-between">
-                <div><div class="font-semibold text-slate-900">{project.name}</div><div class="mt-1 text-sm text-slate-500">Owner: {project.owner}</div></div>
-                <span class="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700">{project.issues} issues</span>
-              </div>
-              <div class="mt-3 text-sm text-slate-600">Missing-documentation assessment is demonstration-only.</div>
-            </div>
-          {:else}
-            <p class="text-sm text-slate-500">No projects were returned.</p>
-          {/each}
-        </div>
-      </div>
-
-      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-panel">
-        <h3 class="text-xl font-semibold text-slate-900">Recent engineering decisions</h3>
-        <div class="mt-5 space-y-4">
-          {#each recentDecisions as decision}
-            <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <div class="font-medium text-slate-900">{decision.title}</div>
-              <div class="mt-2 flex items-center justify-between text-sm text-slate-500"><span>{decision.project}</span><span>{decision.date}</span></div>
-            </div>
-          {:else}
-            <p class="text-sm text-slate-500">No recent decisions were returned.</p>
-          {/each}
-        </div>
-      </div>
-    </section>
-  {/if}
+      <p class="mt-4 text-xs leading-5 text-slate-500">Other modules are clearly marked concept previews. All Auron Mobility people, records and identifiers are fictional.</p>
+    </div>
+  </section>
 </div>

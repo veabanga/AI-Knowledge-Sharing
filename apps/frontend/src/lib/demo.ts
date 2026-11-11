@@ -132,10 +132,10 @@ export const knowledgeRecords = [
 ];
 
 export const people = [
-  { name: 'Alex Morgan', role: 'Senior Mechanical Engineer', department: 'Mechanical Engineering', experience: '12 years', projects: ['Automotive Sensor Development'], risk: 'low' },
-  { name: 'Sarah Chen', role: 'Embedded Software Engineer', department: 'Software Engineering', experience: '8 years', projects: ['Embedded Sensor Software'], risk: 'medium' },
-  { name: 'Michael Weber', role: 'Electrical Engineer', department: 'Electrical Engineering', experience: '10 years', projects: ['Automotive Sensor Development', 'Embedded Sensor Software'], risk: 'low' },
-  { name: 'David Miller', role: 'Manufacturing Engineer', department: 'Manufacturing Engineering', experience: '7 years', projects: ['Sensor Manufacturing Integration'], risk: 'medium' }
+  { name: 'Alex Morgan', role: 'Senior Mechanical Engineer', department: 'Mechanical Engineering', experience: '12 years', projects: ['Project Alpha — Sensor Housing'], risk: 'low' },
+  { name: 'Sarah Chen', role: 'Embedded Software Engineer', department: 'Software Engineering', experience: '8 years', projects: ['Project Beta — Embedded Calibration'], risk: 'medium' },
+  { name: 'Michael Weber', role: 'Electrical Engineer', department: 'Electrical Engineering', experience: '10 years', projects: ['Project Alpha — Sensor Housing', 'Project Beta — Embedded Calibration'], risk: 'low' },
+  { name: 'David Miller', role: 'Manufacturing Engineer', department: 'Manufacturing Engineering', experience: '7 years', projects: ['Project Gamma — Manufacturing Scale-up'], risk: 'medium' }
 ];
 
 export const assistantExamples = [

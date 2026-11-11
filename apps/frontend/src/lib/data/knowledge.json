@@ -1,0 +1,342 @@
+[
+  {
+    "id": "auron-ec-1042",
+    "title": "PCB thermal interference in sensor enclosure",
+    "type": "Solution",
+    "department": "Electrical Engineering",
+    "project": "Project Alpha — Sensor Housing",
+    "component": "PCB sensor array and enclosure",
+    "problem": "PCB temperature exceeded its operating threshold following a mechanical enclosure redesign during extended sensor operation.",
+    "rootCause": "The redesign reduced ventilation clearance and moved a heat-generating power component closer to the PCB sensor array.",
+    "solution": "The team revised PCB placement, increased clearance around the power component, and modified the enclosure ventilation geometry.",
+    "validation": {
+      "status": "Validated",
+      "summary": "Thermal testing completed successfully under the documented extended-operation profile. PCB temperatures remained within the project operating limit."
+    },
+    "lessons": "Evaluate airflow and local heat sources together whenever enclosure geometry changes. Include extended-operation thermal soak in design verification.",
+    "tags": ["overheating", "thermal", "PCB", "sensor housing", "ventilation", "clearance"],
+    "relatedIssues": [
+      { "id": "EC-1042", "title": "Engineering Change EC-1042 — sensor enclosure thermal correction" },
+      { "id": "ALPHA-318", "title": "Extended-operation PCB temperature above limit" }
+    ],
+    "relatedRecordIds": ["auron-me-1018", "auron-ee-1061", "auron-me-1090"],
+    "sources": [
+      { "title": "Sensor enclosure thermal verification", "reference": "AURON-DEMO-DOC-221", "kind": "Test report" },
+      { "title": "Engineering Change EC-1042", "reference": "EC-1042", "kind": "Change record" }
+    ],
+    "author": "Michael Weber",
+    "createdAt": "2026-03-12",
+    "updatedAt": "2026-04-04"
+  },
+  {
+    "id": "auron-me-1018",
+    "title": "Ventilation clearance restored after housing redesign",
+    "type": "Decision",
+    "department": "Mechanical Engineering",
+    "project": "Project Alpha — Sensor Housing",
+    "component": "Die-cast sensor enclosure",
+    "problem": "A packaging update constrained the air gap between the enclosure wall and the sensor PCB, increasing thermal risk.",
+    "rootCause": "The mechanical tolerance stack did not account for the PCB keepout and airflow path at worst-case assembly conditions.",
+    "solution": "The design review restored a 4 mm minimum clearance, added a ventilation channel, and documented the PCB keepout as a controlled interface.",
+    "validation": {
+      "status": "Validated",
+      "summary": "Worst-case tolerance review and thermal chamber checks passed on the updated enclosure geometry."
+    },
+    "lessons": "Treat electronics keepouts and airflow as explicit mechanical interface requirements rather than informal layout guidance.",
+    "tags": ["housing", "enclosure", "airflow", "ventilation", "mechanical redesign", "clearance"],
+    "relatedIssues": [
+      { "id": "ALPHA-302", "title": "Review enclosure to PCB minimum clearance" },
+      { "id": "EC-1042", "title": "Engineering Change EC-1042 — sensor enclosure thermal correction" }
+    ],
+    "relatedRecordIds": ["auron-ec-1042", "auron-me-1090"],
+    "sources": [
+      { "title": "Project Alpha enclosure design review", "reference": "AURON-DEMO-DOC-184", "kind": "Design review" },
+      { "title": "Mechanical interface control drawing", "reference": "AURON-DEMO-DWG-077", "kind": "Drawing" }
+    ],
+    "author": "Alex Morgan",
+    "createdAt": "2026-02-25",
+    "updatedAt": "2026-03-20"
+  },
+  {
+    "id": "auron-ee-1061",
+    "title": "PCB keepout moved away from power-stage heat source",
+    "type": "Lesson",
+    "department": "Electrical Engineering",
+    "project": "Project Beta — Embedded Calibration",
+    "component": "Power stage and sensor input traces",
+    "problem": "A new sensor board revision showed a localized temperature rise and intermittent analog noise near the power stage.",
+    "rootCause": "The original layout placed sensitive analog traces and a temperature-critical sensor channel inside the power-stage thermal keepout.",
+    "solution": "The team moved the analog input routing outside the keepout, widened the copper heat-spreading area, and added a layout review check.",
+    "validation": {
+      "status": "Validated",
+      "summary": "Bench measurements showed lower local temperature rise and stable signal noise across the documented load range."
+    },
+    "lessons": "Reuse thermal keepout and trace-routing checks across board variants; physical separation can reduce both heat coupling and signal interference.",
+    "tags": ["PCB", "circuit board", "heat", "power stage", "noise", "keepout", "thermal"],
+    "relatedIssues": [
+      { "id": "BETA-144", "title": "Analog channel noise increases after board revision" }
+    ],
+    "relatedRecordIds": ["auron-ec-1042", "auron-sw-2033"],
+    "sources": [
+      { "title": "Board revision B thermal and noise bench note", "reference": "AURON-DEMO-LAB-052", "kind": "Lab note" },
+      { "title": "PCB layout review checklist", "reference": "AURON-DEMO-STD-014", "kind": "Engineering standard" }
+    ],
+    "author": "Michael Weber",
+    "createdAt": "2026-04-02",
+    "updatedAt": "2026-04-18"
+  },
+  {
+    "id": "auron-me-1090",
+    "title": "Enclosure gasket compression exceeded tolerance",
+    "type": "Problem",
+    "department": "Mechanical Engineering",
+    "project": "Project Alpha — Sensor Housing",
+    "component": "Housing gasket and cover",
+    "problem": "Several assembled sensor units showed inconsistent cover seating and a small change in sensor response after environmental cycling.",
+    "rootCause": "The cover stack-up compressed the gasket beyond its preferred range at the tightest enclosure and fastener tolerances.",
+    "solution": "A thinner gasket and revised fastener torque window are under evaluation. The corrective design has not yet completed durability testing.",
+    "validation": {
+      "status": "Unresolved",
+      "summary": "Initial fit checks improved, but vibration and long-duration compression-set validation remain open."
+    },
+    "lessons": "Track gasket compression across the full tolerance stack and validate the seal after environmental and vibration exposure.",
+    "tags": ["tolerance", "gasket", "compression", "enclosure", "cover fit", "unresolved"],
+    "relatedIssues": [
+      { "id": "ALPHA-367", "title": "Cover seating varies across tolerance extremes" }
+    ],
+    "relatedRecordIds": ["auron-me-1018", "auron-mfg-3012"],
+    "sources": [
+      { "title": "Housing tolerance stack review", "reference": "AURON-DEMO-DOC-243", "kind": "Analysis" },
+      { "title": "Environmental cycling observation log", "reference": "AURON-DEMO-TEST-091", "kind": "Test log" }
+    ],
+    "author": "Alex Morgan",
+    "createdAt": "2026-05-08",
+    "updatedAt": "2026-06-11"
+  },
+  {
+    "id": "auron-sw-2033",
+    "title": "Temperature-cycle calibration offset corrected in firmware",
+    "type": "Solution",
+    "department": "Software Engineering",
+    "project": "Project Beta — Embedded Calibration",
+    "component": "Sensor calibration firmware",
+    "problem": "Sensor readings drifted after repeated temperature cycling even though room-temperature calibration remained within tolerance.",
+    "rootCause": "The compensation table used a single interpolation segment across a range where the sensor response changed non-linearly.",
+    "solution": "Firmware now uses a segmented compensation curve, stores the calibration revision with the device profile, and rejects out-of-range coefficients.",
+    "validation": {
+      "status": "Validated",
+      "summary": "The revised calibration passed the documented hot/cold cycle sequence and returned readings to the agreed tolerance band."
+    },
+    "lessons": "Validate calibration across the operating temperature envelope, not only at room temperature, and version coefficients with the firmware release.",
+    "tags": ["firmware", "calibration", "temperature", "drift", "sensor", "compensation"],
+    "relatedIssues": [
+      { "id": "BETA-188", "title": "Calibration offset accumulates during thermal cycling" },
+      { "id": "BETA-201", "title": "Add calibration profile revision to device diagnostics" }
+    ],
+    "relatedRecordIds": ["auron-ee-1061", "auron-sw-2041", "auron-mfg-3012"],
+    "sources": [
+      { "title": "Calibration firmware verification report", "reference": "AURON-DEMO-TEST-128", "kind": "Test report" },
+      { "title": "Firmware change note", "reference": "AURON-DEMO-REL-2.7.1", "kind": "Release note" }
+    ],
+    "author": "Sarah Chen",
+    "createdAt": "2026-04-19",
+    "updatedAt": "2026-05-02"
+  },
+  {
+    "id": "auron-mfg-3012",
+    "title": "End-of-line thermal validation failed at peak load",
+    "type": "Problem",
+    "department": "Manufacturing Engineering",
+    "project": "Project Gamma — Manufacturing Scale-up",
+    "component": "End-of-line sensor test fixture",
+    "problem": "Units passed functional checks but failed the end-of-line thermal test during the highest-load portion of the production validation cycle.",
+    "rootCause": "The fixture airflow blocked one enclosure vent, and the test recipe did not match the extended-operation thermal profile.",
+    "solution": "The fixture was revised to keep vents clear and the recipe was updated. A second production lot is scheduled to confirm repeatability.",
+    "validation": {
+      "status": "In progress",
+      "summary": "Fixture airflow and recipe checks pass in engineering trials. Repeatability across the next production lot is still pending."
+    },
+    "lessons": "Production fixtures must reproduce product boundary conditions without masking or creating thermal behavior.",
+    "tags": ["manufacturing", "validation failure", "thermal test", "fixture", "airflow", "production"],
+    "relatedIssues": [
+      { "id": "GAMMA-412", "title": "Peak-load thermal test fails on line fixture" },
+      { "id": "NCR-077", "title": "Production validation nonconformance — demo record" }
+    ],
+    "relatedRecordIds": ["auron-ec-1042", "auron-sw-2033", "auron-mfg-3024"],
+    "sources": [
+      { "title": "Production thermal test trial summary", "reference": "AURON-DEMO-MFG-033", "kind": "Trial report" },
+      { "title": "End-of-line test recipe", "reference": "AURON-DEMO-WI-208", "kind": "Work instruction" }
+    ],
+    "author": "David Miller",
+    "createdAt": "2026-06-14",
+    "updatedAt": "2026-07-01"
+  },
+  {
+    "id": "auron-ee-1110",
+    "title": "Connector pin fit restored with updated tolerance controls",
+    "type": "Solution",
+    "department": "Electrical Engineering",
+    "project": "Project Gamma — Manufacturing Scale-up",
+    "component": "Board-to-harness connector",
+    "problem": "Intermittent sensor disconnects occurred after harness installation on a small pilot build.",
+    "rootCause": "Connector pin position and board support tolerance combined to create marginal engagement at one assembly extreme.",
+    "solution": "The team tightened the board support datum, clarified the connector inspection point, and updated the supplier drawing acceptance range.",
+    "validation": {
+      "status": "Validated",
+      "summary": "Pilot assemblies passed continuity checks after vibration screening using the revised inspection and datum controls."
+    },
+    "lessons": "Investigate the complete mating tolerance chain across board, connector, harness, and assembly fixture—not just the component drawing.",
+    "tags": ["connector", "pin fit", "tolerance", "assembly", "intermittent", "electrical"],
+    "relatedIssues": [
+      { "id": "GAMMA-389", "title": "Intermittent disconnect after harness installation" }
+    ],
+    "relatedRecordIds": ["auron-mfg-3024", "auron-me-1090"],
+    "sources": [
+      { "title": "Pilot build connector inspection record", "reference": "AURON-DEMO-QA-066", "kind": "Inspection record" },
+      { "title": "Harness interface drawing revision", "reference": "AURON-DEMO-DWG-119", "kind": "Drawing" }
+    ],
+    "author": "Michael Weber",
+    "createdAt": "2026-05-22",
+    "updatedAt": "2026-06-07"
+  },
+  {
+    "id": "auron-me-1124",
+    "title": "Thermal interface material selected for sensor power stage",
+    "type": "Decision",
+    "department": "Mechanical Engineering",
+    "project": "Project Alpha — Sensor Housing",
+    "component": "Power-stage heat spreader",
+    "problem": "The power-stage temperature margin varied between early enclosure builds despite consistent electrical load.",
+    "rootCause": "The initial interface pad selection had variable contact pressure across the enclosure tolerance range.",
+    "solution": "The team selected a compliant thermal interface material and added a controlled compression feature to the heat spreader.",
+    "validation": {
+      "status": "Validated",
+      "summary": "Thermal resistance checks passed across three enclosure builds and the documented assembly torque range."
+    },
+    "lessons": "Specify interface material performance together with compression range, surface condition, and assembly controls.",
+    "tags": ["thermal pad", "interface material", "heat spreader", "power stage", "temperature"],
+    "relatedIssues": [
+      { "id": "ALPHA-334", "title": "Thermal margin varies between enclosure builds" }
+    ],
+    "relatedRecordIds": ["auron-ec-1042", "auron-me-1018", "auron-mfg-3012"],
+    "sources": [
+      { "title": "Thermal interface material decision record", "reference": "AURON-DEMO-DEC-038", "kind": "Decision record" },
+      { "title": "Heat-spreader assembly test", "reference": "AURON-DEMO-TEST-109", "kind": "Test report" }
+    ],
+    "author": "Alex Morgan",
+    "createdAt": "2026-03-30",
+    "updatedAt": "2026-04-12"
+  },
+  {
+    "id": "auron-mfg-3024",
+    "title": "False rejects reduced by separating fixture and product checks",
+    "type": "Process",
+    "department": "Manufacturing Engineering",
+    "project": "Project Gamma — Manufacturing Scale-up",
+    "component": "Automated electrical test station",
+    "problem": "The pilot line produced a high false-reject rate on sensor continuity checks, slowing assembly investigation.",
+    "rootCause": "Fixture contact wear and product connector issues were reported under the same test failure code, obscuring the source.",
+    "solution": "A fixture self-check was added before each batch and the test result now separates contact resistance from product continuity.",
+    "validation": {
+      "status": "Validated",
+      "summary": "The revised pilot process reduced repeat tests and made fixture-related failures independently traceable."
+    },
+    "lessons": "Separate test-system health from product acceptance criteria so production data can direct the right corrective action.",
+    "tags": ["manufacturing", "false reject", "test fixture", "validation", "continuity", "process"],
+    "relatedIssues": [
+      { "id": "GAMMA-431", "title": "Pilot test station reports repeated continuity failures" }
+    ],
+    "relatedRecordIds": ["auron-mfg-3012", "auron-ee-1110"],
+    "sources": [
+      { "title": "Pilot line test process update", "reference": "AURON-DEMO-WI-226", "kind": "Work instruction" },
+      { "title": "Test station repeatability review", "reference": "AURON-DEMO-MSA-017", "kind": "Measurement study" }
+    ],
+    "author": "David Miller",
+    "createdAt": "2026-06-27",
+    "updatedAt": "2026-07-08"
+  },
+  {
+    "id": "auron-sw-2041",
+    "title": "Cold-start sensor offset remains outside acceptance band",
+    "type": "Problem",
+    "department": "Software Engineering",
+    "project": "Project Beta — Embedded Calibration",
+    "component": "Cold-start calibration routine",
+    "problem": "A subset of devices reports a temporary sensor offset during the first seconds after a cold start.",
+    "rootCause": "The initialization sequence reads the temperature channel before the analog reference has stabilized at low ambient temperature.",
+    "solution": "A delayed sampling strategy is being evaluated. The software change is not yet validated across hardware revisions.",
+    "validation": {
+      "status": "Unresolved",
+      "summary": "A bench prototype reduces the offset, but cross-revision testing and startup-time impact review remain open."
+    },
+    "lessons": "Verify sensor initialization timing against hardware settling behavior at environmental extremes before locking calibration logic.",
+    "tags": ["cold start", "calibration", "offset", "firmware", "temperature", "initialization"],
+    "relatedIssues": [
+      { "id": "BETA-226", "title": "Temporary sensor offset after cold start" }
+    ],
+    "relatedRecordIds": ["auron-sw-2033", "auron-ee-1061"],
+    "sources": [
+      { "title": "Cold-start bench observation log", "reference": "AURON-DEMO-LAB-081", "kind": "Lab note" },
+      { "title": "Calibration startup investigation", "reference": "AURON-DEMO-INV-027", "kind": "Investigation" }
+    ],
+    "author": "Sarah Chen",
+    "createdAt": "2026-07-10",
+    "updatedAt": "2026-07-22"
+  },
+  {
+    "id": "auron-me-1152",
+    "title": "Fastener boss creep observed after hot vibration exposure",
+    "type": "Problem",
+    "department": "Mechanical Engineering",
+    "project": "Project Alpha — Sensor Housing",
+    "component": "Polymer enclosure fastener boss",
+    "problem": "A small number of sensor enclosures showed a loosened cover joint after combined hot soak and vibration testing.",
+    "rootCause": "The polymer boss experienced creep under sustained clamp load, reducing fastener preload at the elevated test temperature.",
+    "solution": "A metal insert and revised boss geometry are being prototyped. Durability validation is not complete.",
+    "validation": {
+      "status": "In progress",
+      "summary": "Early prototypes retain preload in short-duration checks. Long-duration hot vibration testing is pending."
+    },
+    "lessons": "Assess fastener retention under combined temperature and vibration loads, especially when polymer parts carry sustained clamp force.",
+    "tags": ["fastener", "boss", "creep", "vibration", "hot soak", "mechanical redesign"],
+    "relatedIssues": [
+      { "id": "ALPHA-402", "title": "Cover joint preload decreases after hot vibration test" }
+    ],
+    "relatedRecordIds": ["auron-me-1090", "auron-me-1018"],
+    "sources": [
+      { "title": "Hot vibration teardown notes", "reference": "AURON-DEMO-TEST-153", "kind": "Test report" },
+      { "title": "Fastener retention prototype review", "reference": "AURON-DEMO-REV-061", "kind": "Design review" }
+    ],
+    "author": "Alex Morgan",
+    "createdAt": "2026-08-03",
+    "updatedAt": "2026-08-15"
+  },
+  {
+    "id": "auron-sw-2057",
+    "title": "Firmware timing baseline prevents calibration race condition",
+    "type": "Lesson",
+    "department": "Software Engineering",
+    "project": "Project Beta — Embedded Calibration",
+    "component": "Sensor sampling scheduler",
+    "problem": "Calibration results varied between runs when diagnostic logging was enabled on the embedded controller.",
+    "rootCause": "The sampling task and diagnostic task shared an unprotected timing window, occasionally delaying a sensor conversion.",
+    "solution": "The project locked sampling to a 10 kHz timing baseline and moved diagnostic formatting outside the acquisition path.",
+    "validation": {
+      "status": "Validated",
+      "summary": "Repeated calibration runs remained stable with diagnostics enabled under the documented controller load."
+    },
+    "lessons": "Keep logging and telemetry out of time-critical acquisition paths; record the timing baseline alongside calibration evidence.",
+    "tags": ["firmware", "timing", "calibration", "race condition", "sampling", "diagnostics"],
+    "relatedIssues": [
+      { "id": "BETA-239", "title": "Calibration result changes when diagnostics are enabled" }
+    ],
+    "relatedRecordIds": ["auron-sw-2033", "auron-sw-2041"],
+    "sources": [
+      { "title": "Firmware timing decision note", "reference": "AURON-DEMO-DEC-054", "kind": "Decision record" },
+      { "title": "Calibration repeatability test", "reference": "AURON-DEMO-TEST-167", "kind": "Test report" }
+    ],
+    "author": "Sarah Chen",
+    "createdAt": "2026-08-19",
+    "updatedAt": "2026-08-27"
+  }
+]

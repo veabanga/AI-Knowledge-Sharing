@@ -5,6 +5,14 @@ export default {
     extend: {
       colors: {
         navy: '#081b2d',
+        sidebar: {
+          DEFAULT: '#081b2d',
+          text: '#e2e8f0',
+          muted: '#b7c5d5',
+          label: '#9aacc0',
+          active: '#18334a',
+          hover: '#10293e'
+        },
         slate: '#f3f6fb',
         teal: '#32c7b8',
         cyan: '#38bdf8',

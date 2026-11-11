@@ -1,47 +1,24 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { tick } from 'svelte';
   import type { Core } from 'cytoscape';
-  import { graphData, graphEdges } from '$lib/demo';
+  import {
+    graphData,
+    graphEdges,
+    graphNodeKnowledge as nodeKnowledge,
+    graphNodeScopes as nodeScopes,
+    knowledgeDepartments as departmentOptions,
+    knowledgeProjects as projectOptions,
+    type GraphKnowledge
+  } from '$lib/graph-data';
 
-  const departmentOptions = [
-    'Mechanical Engineering',
-    'Electrical Engineering',
-    'Software Engineering',
-    'Manufacturing Engineering'
-  ];
-  const projectOptions = [
-    'Automotive Sensor Development',
-    'Embedded Sensor Software',
-    'Sensor Manufacturing Integration'
-  ];
   const relationshipOptions = [...new Set(graphEdges.map((edge) => edge.label))].sort();
-  const nodeScopes: Record<string, { departments: string[]; projects: string[] }> = {
-    'department-mechanical': { departments: ['Mechanical Engineering'], projects: ['Automotive Sensor Development', 'Sensor Manufacturing Integration'] },
-    'department-electrical': { departments: ['Electrical Engineering'], projects: ['Automotive Sensor Development', 'Embedded Sensor Software'] },
-    'department-software': { departments: ['Software Engineering'], projects: ['Embedded Sensor Software'] },
-    'department-manufacturing': { departments: ['Manufacturing Engineering'], projects: ['Sensor Manufacturing Integration'] },
-    alex: { departments: ['Mechanical Engineering'], projects: ['Automotive Sensor Development', 'Sensor Manufacturing Integration'] },
-    sarah: { departments: ['Software Engineering'], projects: ['Embedded Sensor Software'] },
-    michael: { departments: ['Electrical Engineering'], projects: ['Automotive Sensor Development', 'Embedded Sensor Software'] },
-    david: { departments: ['Manufacturing Engineering'], projects: ['Sensor Manufacturing Integration'] },
-    'project-1': { departments: ['Mechanical Engineering', 'Electrical Engineering'], projects: ['Automotive Sensor Development'] },
-    'project-2': { departments: ['Software Engineering', 'Electrical Engineering'], projects: ['Embedded Sensor Software'] },
-    'project-3': { departments: ['Manufacturing Engineering', 'Mechanical Engineering'], projects: ['Sensor Manufacturing Integration'] },
-    'component-1': { departments: ['Mechanical Engineering'], projects: ['Automotive Sensor Development'] },
-    'component-2': { departments: ['Electrical Engineering', 'Software Engineering'], projects: ['Embedded Sensor Software'] },
-    'component-3': { departments: ['Manufacturing Engineering'], projects: ['Sensor Manufacturing Integration'] },
-    'decision-1': { departments: ['Mechanical Engineering'], projects: ['Automotive Sensor Development'] },
-    'decision-2': { departments: ['Software Engineering'], projects: ['Embedded Sensor Software'] }
-  };
-  const nodeDetails: Record<string, string> = {
-    'component-1': 'Thermal housing component in the sensor development demo.',
-    'component-2': 'PCB sensor array in the embedded software demo.',
-    'component-3': 'Calibration stack tied to manufacturing integration.',
-    'decision-1': 'Demo decision: composite housing selected after thermal review.',
-    'decision-2': 'Demo decision: firmware timing baseline set for calibration.',
-    'project-1': 'Project connects mechanical housing and electrical constraints.',
-    'project-2': 'Project captures firmware calibration and sensor noise issues.',
-    'project-3': 'Project captures manufacturing validation and test requirements.'
+  type SelectedNode = GraphKnowledge & {
+    id: string;
+    label: string;
+    type: string;
+    department: string;
+    project: string;
   };
 
   let container: HTMLDivElement;
@@ -50,7 +27,46 @@
   let departmentFilter = '';
   let projectFilter = '';
   let relationshipFilter = '';
-  let selectedNode: { id: string; label: string; type: string } | null = null;
+  let selectedNode: SelectedNode | null = null;
+
+  function selectNode(id: string) {
+    const node = graphData.find((item) => item.id === id);
+    if (!node) return;
+    const scopes = nodeScopes[id];
+    const details = nodeKnowledge[id];
+    selectedNode = {
+      id,
+      label: node.label,
+      type: node.type,
+      ...details,
+      department: scopes.departments.join(', ') || 'Not specified',
+      project: scopes.projects.join(', ') || 'Not specified'
+    };
+    cy?.nodes().unselect();
+    cy?.$id(id).select();
+    applyHighlights();
+    void tick().then(() => cy?.resize());
+  }
+
+  function clearSelection() {
+    selectedNode = null;
+    cy?.nodes().unselect();
+    applyHighlights();
+    void tick().then(() => cy?.resize());
+  }
+
+  function applyHighlights() {
+    if (!cy) return;
+    cy.elements().removeClass('dimmed highlighted selected-node');
+    if (!selectedNode) return;
+    const selected = cy.$id(selectedNode.id);
+    const connectedEdges = selected.connectedEdges();
+    const connectedNodes = connectedEdges.connectedNodes();
+    cy.elements().addClass('dimmed');
+    selected.removeClass('dimmed').addClass('selected-node');
+    connectedNodes.removeClass('dimmed');
+    connectedEdges.removeClass('dimmed').addClass('highlighted');
+  }
 
   function applyFilters() {
     if (!cy) return;
@@ -67,6 +83,7 @@
       const endpointsVisible = edge.source().style('display') !== 'none' && edge.target().style('display') !== 'none';
       edge.style('display', relationMatches && endpointsVisible ? 'element' : 'none');
     });
+    applyHighlights();
     cy.fit(cy.elements(':visible'), 36);
   }
 
@@ -109,11 +126,11 @@
               style: {
                 label: 'data(label)',
                 'text-wrap': 'wrap',
-                'text-max-width': '145px',
+                'text-max-width': '90px',
                 'text-valign': 'bottom',
                 'text-margin-y': 7,
                 color: '#0f172a',
-                'font-size': 11,
+                'font-size': 8,
                 'font-weight': 600,
                 'background-color': '#8fd3ff',
                 width: 34,
@@ -124,36 +141,42 @@
             },
             { selector: 'node[group = "department"]', style: { 'background-color': '#34d399', 'border-color': '#047857', width: 44, height: 44 } },
             { selector: 'node[group = "project"]', style: { 'background-color': '#60a5fa', 'border-color': '#1d4ed8', width: 40, height: 40 } },
-            { selector: 'node[group = "employee"]', style: { 'background-color': '#fbbf24', 'border-color': '#b45309' } },
-            { selector: 'node[group = "decision"]', style: { 'background-color': '#c4b5fd', 'border-color': '#6d28d9' } },
+            { selector: 'node[group = "knowledge"]', style: { 'background-color': '#99f6e4', 'border-color': '#0f766e', width: 38, height: 38 } },
+            { selector: 'node[type = "Problem"]', style: { 'background-color': '#fda4af', 'border-color': '#be123c' } },
+            { selector: 'node[type = "Solution"]', style: { 'background-color': '#6ee7b7', 'border-color': '#047857' } },
+            { selector: 'node[type = "Decision"]', style: { 'background-color': '#c4b5fd', 'border-color': '#6d28d9' } },
+            { selector: 'node[type = "Lesson"]', style: { 'background-color': '#93c5fd', 'border-color': '#1d4ed8' } },
+            { selector: 'node.dimmed', style: { opacity: 0.38 } },
+            { selector: 'node.selected-node', style: { 'border-width': 5, 'border-color': '#0f172a', opacity: 1 } },
             { selector: 'node:selected', style: { 'border-width': 5, 'border-color': '#0f172a' } },
             {
               selector: 'edge',
               style: {
-                label: 'data(label)',
+                label: '',
                 'curve-style': 'bezier',
                 'target-arrow-shape': 'triangle',
                 'line-color': '#94a3b8',
                 'target-arrow-color': '#64748b',
                 'arrow-scale': 1.1,
                 width: 2,
-                'font-size': 9,
+                'font-size': 8,
                 color: '#475569'
               }
-            }
+            },
+            { selector: 'edge.dimmed', style: { opacity: 0.16 } },
+            { selector: 'edge.highlighted', style: { label: 'data(label)', 'line-color': '#0f766e', 'target-arrow-color': '#0f766e', width: 4, opacity: 1 } }
           ],
-          layout: { name: 'cose', animate: false, padding: 45, nodeRepulsion: 6500, idealEdgeLength: 100 },
+          layout: { name: 'cose', animate: false, padding: 65, nodeRepulsion: 16000, idealEdgeLength: 170 },
           minZoom: 0.25,
           maxZoom: 3
         });
 
         cy = instance;
         instance.on('tap', 'node', (event) => {
-          const node = event.target;
-          selectedNode = { id: node.id(), label: node.data('label'), type: node.data('type') };
+          selectNode(event.target.id());
         });
         instance.on('tap', (event) => {
-          if (event.target === instance) selectedNode = null;
+          if (event.target === instance) clearSelection();
         });
         instance.one('layoutstop', () => {
           if (disposed) return;
@@ -183,8 +206,9 @@
 
 <div class="space-y-6">
   <header>
-    <p class="text-sm font-medium uppercase tracking-[0.18em] text-slate-500">Cross-discipline intelligence</p>
+    <p class="text-sm font-medium uppercase tracking-[0.18em] text-slate-500">Concept preview · Fictional Auron Mobility data</p>
     <h2 class="mt-2 text-3xl font-semibold text-slate-900">Knowledge graph</h2>
+    <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Inspect sample relationships across departments, projects, engineering problems and solutions. Select a node to open its details; the network is illustrative and runs locally in your browser.</p>
   </header>
 
   <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-panel">
@@ -207,8 +231,9 @@
       <div class="flex flex-wrap gap-2 text-xs font-medium text-slate-600">
         <span class="rounded-full bg-emerald-100 px-2 py-1">Department</span>
         <span class="rounded-full bg-blue-100 px-2 py-1">Project</span>
-        <span class="rounded-full bg-amber-100 px-2 py-1">Employee</span>
-        <span class="rounded-full bg-violet-100 px-2 py-1">Decision</span>
+        <span class="rounded-full bg-rose-100 px-2 py-1">Problem</span>
+        <span class="rounded-full bg-teal-100 px-2 py-1">Solution</span>
+        <span class="rounded-full bg-violet-100 px-2 py-1">Decision / lesson</span>
         <span class="rounded-full bg-slate-100 px-2 py-1">Auron Mobility demo relationships</span>
       </div>
       <div class="flex gap-2">
@@ -219,33 +244,60 @@
     </div>
 
     {#if graphError}<div role="alert" class="mb-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">Graph initialization failed: {graphError}</div>{/if}
-    <div bind:this={container} class="h-[520px] min-h-[520px] w-full rounded-xl border border-slate-200 bg-slate-50"></div>
+    <div class={selectedNode ? 'grid grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_320px]' : ''}>
+      <div bind:this={container} class="h-[520px] min-h-[520px] w-full rounded-xl border border-slate-200 bg-slate-50"></div>
+      {#if selectedNode}
+        <aside aria-label="Selected graph node details" class="max-h-[520px] min-h-0 overflow-y-auto rounded-xl border border-slate-200 bg-white p-5 shadow-panel">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <div class="text-xs font-semibold uppercase tracking-[0.16em] text-teal-700">{selectedNode.knowledgeType}</div>
+              <h3 class="mt-2 break-words text-lg font-semibold leading-6 text-slate-900">{selectedNode.title}</h3>
+              <div class="mt-2 break-all font-mono text-xs text-slate-500">Record ID: {selectedNode.id}</div>
+            </div>
+            <button class="shrink-0 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50" on:click={clearSelection} aria-label="Close knowledge details">Close</button>
+          </div>
+
+          <div class="mt-5 space-y-4">
+            <section>
+              <h4 class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Description</h4>
+              <p class="mt-1 text-sm leading-5 text-slate-800">{selectedNode.description}</p>
+            </section>
+            <section>
+              <h4 class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Detailed explanation</h4>
+              <p class="mt-1 text-sm leading-5 text-slate-700">{selectedNode.explanation}</p>
+            </section>
+            <dl class="grid grid-cols-1 gap-3 rounded-lg bg-slate-50 p-3 text-sm">
+              <div><dt class="text-xs font-medium text-slate-500">Department</dt><dd class="mt-0.5 break-words text-slate-800">{selectedNode.department}</dd></div>
+              <div><dt class="text-xs font-medium text-slate-500">Associated project</dt><dd class="mt-0.5 break-words text-slate-800">{selectedNode.project}</dd></div>
+              <div><dt class="text-xs font-medium text-slate-500">Engineering component</dt><dd class="mt-0.5 break-words text-slate-800">{selectedNode.component}</dd></div>
+              <div><dt class="text-xs font-medium text-slate-500">Validation status</dt><dd class="mt-0.5 break-words text-slate-800">{selectedNode.validation}</dd></div>
+              <div><dt class="text-xs font-medium text-slate-500">Source document or issue</dt><dd class="mt-0.5 break-words text-slate-800">{selectedNode.source}</dd></div>
+            </dl>
+            <section>
+              <h4 class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Direct relationships</h4>
+              {#if selectedRelations.length}
+                <ul class="mt-2 space-y-2">
+                  {#each selectedRelations as relation}
+                    {@const connectedId = relation.source === selectedNode.id ? relation.target : relation.source}
+                    {@const connectedNode = graphData.find((node) => node.id === connectedId)}
+                    <li>
+                      <button class="w-full rounded-lg border border-slate-200 bg-slate-50 p-3 text-left hover:border-teal-300 hover:bg-teal-50" on:click={() => selectNode(connectedId)}>
+                        <span class="block text-[11px] font-semibold uppercase tracking-[0.1em] text-teal-800">{relation.label.replaceAll('_', ' ')}</span>
+                        <span class="mt-1 block text-sm font-medium text-slate-900">{connectedNode?.label ?? connectedId}</span>
+                        <span class="mt-0.5 block text-xs text-slate-500">{connectedNode?.type ?? 'Related record'} · Open details</span>
+                      </button>
+                    </li>
+                  {/each}
+                </ul>
+              {:else}
+                <p class="mt-2 text-sm text-slate-500">No linked relationships in the demo data.</p>
+              {/if}
+            </section>
+            <p class="text-xs leading-4 text-slate-500">These details and relationships are part of the fictional Auron Mobility demo dataset.</p>
+          </div>
+        </aside>
+      {/if}
+    </div>
     <div class="mt-2 text-xs text-slate-500">Relationships shown are part of the fictional Auron Mobility demonstration dataset.</div>
   </div>
-
-  {#if selectedNode}
-    <section aria-label="Selected graph node details" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-panel">
-      <div class="flex items-start justify-between gap-4">
-        <div>
-          <div class="text-xs uppercase tracking-[0.16em] text-slate-500">{selectedNode.type}</div>
-          <h3 class="mt-1 text-xl font-semibold text-slate-900">{selectedNode.label}</h3>
-          <p class="mt-2 text-sm text-slate-600">{nodeDetails[selectedNode.id] ?? 'Auron Mobility demonstration entity.'}</p>
-        </div>
-        <button class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm" on:click={() => (selectedNode = null)}>Close</button>
-      </div>
-      <div class="mt-4">
-        <div class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Related demo relationships</div>
-        {#if selectedRelations.length}
-          <ul class="mt-2 space-y-1 text-sm text-slate-700">
-            {#each selectedRelations as relation}
-              <li>{relation.label.replaceAll('_', ' ')} · {graphData.find((node) => node.id === (relation.source === selectedNode?.id ? relation.target : relation.source))?.label}</li>
-            {/each}
-          </ul>
-        {:else}
-          <p class="mt-2 text-sm text-slate-500">No linked relationships in the demo data.</p>
-        {/if}
-      </div>
-      <p class="mt-3 text-xs text-slate-500">These relationships are demo records, not evidence from a connected enterprise source.</p>
-    </section>
-  {/if}
 </div>
