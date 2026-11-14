@@ -417,6 +417,7 @@
     </section>
   {:else}
     <button
+      class:tour-show-control-centered={activeTourStep === 7}
       class="tour-show-control fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-3 z-[60] min-h-11 rounded-full px-4 py-2 text-sm font-semibold shadow-xl"
       aria-label={`Show tour tip, step ${activeTourStep} of 9`}
       aria-expanded="false"
@@ -523,6 +524,18 @@
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
+  }
+
+  @media (min-width: 1024px) {
+    .tour-show-control-centered {
+      right: auto;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .tour-show-control-centered:active {
+      transform: translate(-50%, 1px);
+    }
   }
 
   .tour-show-control:hover {
