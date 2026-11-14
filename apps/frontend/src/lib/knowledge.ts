@@ -19,12 +19,30 @@ export type KnowledgeRecord = {
   author: string;
   createdAt: string;
   updatedAt: string;
+  sourceType?: 'Curated demo' | 'Manual contribution';
+  detailedContext?: string;
+  category?: string;
+  contributorName?: string;
+  occurredAt?: string;
+  stepsTaken?: string;
+  validationMethod?: string;
+  validationOutcome?: string;
+  recommendations?: string;
+  investigation?: string;
+  attemptedApproaches?: string;
+  unsuccessfulApproaches?: string;
+  blocker?: string;
+  supportNeeded?: string;
+  nextSteps?: string;
+  relatedDepartments?: string[];
 };
 
-export const knowledgeRecords = recordsJson as KnowledgeRecord[];
-export const knowledgeDepartments = [...new Set(knowledgeRecords.map((record) => record.department))];
-export const knowledgeProjects = [...new Set(knowledgeRecords.map((record) => record.project))];
-export const knowledgeTypes = [...new Set(knowledgeRecords.map((record) => record.type))];
+export const curatedKnowledgeRecords = recordsJson as KnowledgeRecord[];
+export const knowledgeRecords = curatedKnowledgeRecords;
+export const knowledgeDepartments = ['Mechanical Engineering', 'Electrical Engineering', 'Software Engineering', 'Manufacturing Engineering'];
+export const curatedKnowledgeProjects = [...new Set(curatedKnowledgeRecords.map((record) => record.project))];
+export const knowledgeProjects = curatedKnowledgeProjects;
+export const knowledgeTypes = [...new Set(curatedKnowledgeRecords.map((record) => record.type))];
 export const suggestedSearches = [
   'Our sensor housing is overheating near the PCB during extended operation',
   'Firmware calibration drifts after temperature cycling',

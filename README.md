@@ -9,7 +9,8 @@ All people, projects, issue identifiers, documents and engineering examples in t
 - **Frontend:** SvelteKit, TypeScript, Tailwind CSS, Lucide icons and Cytoscape.js.
 - **Demo knowledge:** Static JSON at `apps/frontend/src/lib/data/knowledge.json`.
 - **Retrieval:** Browser-side weighted token search and synonym expansion in `apps/frontend/src/lib/search.ts`.
-- **Saved investigation:** Browser LocalStorage.
+- **Saved investigation and manual contributions:** Browser LocalStorage; contributions are searchable on the current browser only. The contribution form includes editable sample data to make trying it faster.
+- **Onboarding:** Optional nine-step guided tour, available from the navigation at any time.
 - **Concept previews:** Knowledge Graph, Sprint Intelligence, People & Handover and planned integrations.
 - **Future services retained:** `services/backend` (Spring Boot) and `services/ai` (FastAPI) remain in the repository but are not required to run or deploy this MVP. Database and Docker assets are likewise not used by the static frontend.
 
@@ -47,6 +48,7 @@ For a local build using the exact Pages base, set `GITHUB_PAGES=true` in the bui
 
 - `/` — MVP overview and demo entry point.
 - `/discovery/` — interactive knowledge search, filters, details, related records and saved investigation.
+- `/contribute/` — reviewed manual contribution form for resolved or unresolved engineering issues, with editable sample data; records stay in this browser.
 - `/graph/` — sample interactive knowledge graph.
 - `/sprint-intelligence/` — fixed retrospective concept preview.
 - `/people/` — fictional expertise and handover preview.

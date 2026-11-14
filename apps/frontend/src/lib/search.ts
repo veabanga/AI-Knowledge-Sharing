@@ -16,7 +16,19 @@ const fieldWeights: { key: keyof KnowledgeRecord; label: string; weight: number 
   { key: 'component', label: 'Component', weight: 2 },
   { key: 'project', label: 'Project', weight: 1.5 },
   { key: 'department', label: 'Department', weight: 1.5 },
-  { key: 'type', label: 'Knowledge type', weight: 1 }
+  { key: 'type', label: 'Knowledge type', weight: 1 },
+  { key: 'detailedContext', label: 'Detailed context', weight: 3 },
+  { key: 'stepsTaken', label: 'Steps taken', weight: 3 },
+  { key: 'validationOutcome', label: 'Validation outcome', weight: 3 },
+  { key: 'recommendations', label: 'Recommendations', weight: 3 },
+  { key: 'investigation', label: 'Investigation', weight: 3 },
+  { key: 'attemptedApproaches', label: 'Approaches attempted', weight: 3 },
+  { key: 'unsuccessfulApproaches', label: 'What did not work', weight: 3 },
+  { key: 'blocker', label: 'Current blocker', weight: 3 },
+  { key: 'supportNeeded', label: 'Support needed', weight: 3 },
+  { key: 'nextSteps', label: 'Suggested next steps', weight: 3 },
+  { key: 'category', label: 'Engineering domain', weight: 2 },
+  { key: 'relatedDepartments', label: 'Related departments', weight: 1.5 }
 ];
 
 const stopWords = new Set([
@@ -64,7 +76,8 @@ function queryTokens(query: string) {
 function fieldText(record: KnowledgeRecord, key: keyof KnowledgeRecord) {
   const value = record[key];
   if (Array.isArray(value)) return value.join(' ').toLocaleLowerCase();
-  return String(value).toLocaleLowerCase();
+  if (value && typeof value === 'object') return Object.values(value).join(' ').toLocaleLowerCase();
+  return String(value ?? '').toLocaleLowerCase();
 }
 
 export function searchKnowledge(records: KnowledgeRecord[], query: string): SearchResult[] {

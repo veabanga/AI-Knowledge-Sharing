@@ -3,16 +3,18 @@
   import { tick } from 'svelte';
   import type { Core } from 'cytoscape';
   import {
-    graphData,
-    graphEdges,
-    graphNodeKnowledge as nodeKnowledge,
-    graphNodeScopes as nodeScopes,
-    knowledgeDepartments as departmentOptions,
-    knowledgeProjects as projectOptions,
-    type GraphKnowledge
+    buildGraphModel,
+    type GraphKnowledge,
+    type GraphModel
   } from '$lib/graph-data';
+  import { curatedKnowledgeRecords, type KnowledgeRecord } from '$lib/knowledge';
+  import { knowledgeStore } from '$lib/knowledge-store';
 
-  const relationshipOptions = [...new Set(graphEdges.map((edge) => edge.label))].sort();
+  let graphModel: GraphModel = buildGraphModel(curatedKnowledgeRecords);
+  let graphRecords: KnowledgeRecord[] = curatedKnowledgeRecords;
+  $: departmentOptions = [...new Set(graphModel.nodes.filter((node) => node.group === 'department').map((node) => graphModel.scopes[node.id].departments[0]))];
+  $: projectOptions = graphModel.projects;
+  $: relationshipOptions = [...new Set(graphModel.edges.map((edge) => edge.label))].sort();
   type SelectedNode = GraphKnowledge & {
     id: string;
     label: string;
@@ -30,10 +32,10 @@
   let selectedNode: SelectedNode | null = null;
 
   function selectNode(id: string) {
-    const node = graphData.find((item) => item.id === id);
+    const node = graphModel.nodes.find((item) => item.id === id);
     if (!node) return;
-    const scopes = nodeScopes[id];
-    const details = nodeKnowledge[id];
+    const scopes = graphModel.scopes[id];
+    const details = graphModel.details[id];
     selectedNode = {
       id,
       label: node.label,
@@ -87,6 +89,35 @@
     cy.fit(cy.elements(':visible'), 36);
   }
 
+  function syncGraph(records: KnowledgeRecord[]) {
+    graphRecords = records;
+    const nextModel = buildGraphModel(records);
+    graphModel = nextModel;
+    if (!cy) return;
+
+    cy.batch(() => {
+      for (const node of nextModel.nodes) {
+        if (cy!.$id(node.id).length) continue;
+        cy!.add({
+          group: 'nodes',
+          data: {
+            ...node,
+            scopes: nextModel.scopes[node.id]
+          }
+        });
+      }
+      nextModel.edges.forEach((edge, index) => {
+        const id = `relationship-${edge.source}-${edge.target}-${edge.label}-${index}`;
+        if (cy!.$id(id).length) return;
+        cy!.add({
+          group: 'edges',
+          data: { id, source: edge.source, target: edge.target, label: edge.label }
+        });
+      });
+    });
+    applyFilters();
+  }
+
   function fitGraph() {
     cy?.fit(cy.elements(':visible'), 36);
   }
@@ -100,24 +131,34 @@
   onMount(() => {
     let disposed = false;
     let instance: Core | undefined;
+    const unsubscribe = knowledgeStore.subscribe((records) => syncGraph(records));
+    const handleStorage = (event: StorageEvent) => {
+      try {
+        knowledgeStore.handleStorage(event);
+      } catch (error) {
+        graphError = error instanceof Error ? error.message : 'Could not refresh locally saved graph records.';
+      }
+    };
+    window.addEventListener('storage', handleStorage);
 
     void import('cytoscape')
       .then(({ default: cytoscape }) => {
         if (disposed || !container) return;
+        const initialGraph = buildGraphModel(curatedKnowledgeRecords);
         instance = cytoscape({
           container,
           elements: {
-            nodes: graphData.map((node) => ({
+            nodes: initialGraph.nodes.map((node) => ({
               data: {
                 id: node.id,
                 label: node.label,
                 type: node.type,
                 group: node.group,
-                scopes: nodeScopes[node.id] ?? { departments: [], projects: [] }
+                scopes: initialGraph.scopes[node.id]
               }
             })),
-            edges: graphEdges.map((edge, index) => ({
-              data: { id: `relationship-${index}`, source: edge.source, target: edge.target, label: edge.label }
+            edges: initialGraph.edges.map((edge, index) => ({
+              data: { id: `relationship-${edge.source}-${edge.target}-${edge.label}-${index}`, source: edge.source, target: edge.target, label: edge.label }
             }))
           },
           style: [
@@ -172,6 +213,7 @@
         });
 
         cy = instance;
+        syncGraph(graphRecords);
         instance.on('tap', 'node', (event) => {
           selectNode(event.target.id());
         });
@@ -190,13 +232,15 @@
 
     return () => {
       disposed = true;
+      unsubscribe();
+      window.removeEventListener('storage', handleStorage);
       instance?.destroy();
       cy = undefined;
     };
   });
 
   $: selectedRelations = selectedNode
-    ? graphEdges.filter((edge) => edge.source === selectedNode?.id || edge.target === selectedNode?.id)
+    ? graphModel.edges.filter((edge) => edge.source === selectedNode?.id || edge.target === selectedNode?.id)
     : [];
 </script>
 
@@ -244,8 +288,8 @@
     </div>
 
     {#if graphError}<div role="alert" class="mb-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">Graph initialization failed: {graphError}</div>{/if}
-    <div class={selectedNode ? 'grid grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_320px]' : ''}>
-      <div bind:this={container} class="h-[520px] min-h-[520px] w-full rounded-xl border border-slate-200 bg-slate-50"></div>
+    <div class={selectedNode ? 'grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]' : ''}>
+      <div data-tour="knowledge-graph" bind:this={container} class="h-[520px] min-h-[520px] w-full rounded-xl border border-slate-200 bg-slate-50"></div>
       {#if selectedNode}
         <aside aria-label="Selected graph node details" class="max-h-[520px] min-h-0 overflow-y-auto rounded-xl border border-slate-200 bg-white p-5 shadow-panel">
           <div class="flex items-start justify-between gap-3">
@@ -279,7 +323,7 @@
                 <ul class="mt-2 space-y-2">
                   {#each selectedRelations as relation}
                     {@const connectedId = relation.source === selectedNode.id ? relation.target : relation.source}
-                    {@const connectedNode = graphData.find((node) => node.id === connectedId)}
+                    {@const connectedNode = graphModel.nodes.find((node) => node.id === connectedId)}
                     <li>
                       <button class="w-full rounded-lg border border-slate-200 bg-slate-50 p-3 text-left hover:border-teal-300 hover:bg-teal-50" on:click={() => selectNode(connectedId)}>
                         <span class="block text-[11px] font-semibold uppercase tracking-[0.1em] text-teal-800">{relation.label.replaceAll('_', ' ')}</span>

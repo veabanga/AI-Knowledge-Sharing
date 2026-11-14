@@ -1,3 +1,5 @@
+import colors from 'tailwindcss/colors';
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./src/**/*.{html,js,svelte,ts}'],
@@ -13,9 +15,9 @@ export default {
           active: '#18334a',
           hover: '#10293e'
         },
-        slate: '#f3f6fb',
-        teal: '#32c7b8',
-        cyan: '#38bdf8',
+        slate: { ...colors.slate, DEFAULT: '#f3f6fb' },
+        teal: { ...colors.teal, DEFAULT: '#32c7b8' },
+        cyan: { ...colors.cyan, DEFAULT: '#38bdf8' },
         ink: '#0f172a'
       },
       boxShadow: {

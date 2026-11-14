@@ -10,12 +10,12 @@
 </svelte:head>
 
 <div class="mx-auto max-w-[1400px] space-y-8">
-  <section class="relative overflow-hidden rounded-3xl bg-navy px-6 py-9 text-white shadow-panel md:px-10 md:py-12">
+  <section data-tour="overview-hero" class="relative overflow-hidden rounded-3xl bg-navy px-5 py-7 text-white shadow-panel sm:px-6 sm:py-9 md:px-10 md:py-12">
     <div class="absolute -right-16 -top-20 h-72 w-72 rounded-full border border-teal-300/10"></div>
     <div class="absolute -right-4 -top-8 h-48 w-48 rounded-full border border-teal-300/15"></div>
     <div class="relative max-w-3xl">
       <div class="inline-flex items-center gap-2 rounded-full border border-teal-300/25 bg-teal-300/10 px-3 py-1.5 text-xs font-medium text-teal-200"><Sparkles size={14} /> Auron Mobility engineering knowledge demo</div>
-      <h1 class="mt-6 text-4xl font-semibold leading-tight tracking-tight md:text-5xl">Your engineering organisation has solved this problem before.<br /><span class="text-teal-300">Find out how.</span></h1>
+      <h1 class="mt-6 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl md:text-5xl">Your engineering organisation has solved this problem before.<br /><span class="text-teal-300">Find out how.</span></h1>
       <p class="mt-5 max-w-2xl text-base leading-7 text-slate-300">Nexus helps engineering teams find previous problems, root causes, validated solutions and lessons across projects—so they can build on what the organisation already knows.</p>
       <a href={`${base}/discovery/`} class="mt-8 inline-flex items-center gap-2 rounded-xl bg-teal-400 px-5 py-3 text-sm font-semibold text-navy transition hover:bg-teal-300">
         Explore the live demo <ArrowRight size={17} />

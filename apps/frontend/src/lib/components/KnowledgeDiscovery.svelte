@@ -1,16 +1,17 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { page } from '$app/stores';
   import { base } from '$app/paths';
-  import { Bookmark, BookmarkCheck, Check, ChevronRight, Copy, Search, X } from 'lucide-svelte';
+  import { Bookmark, BookmarkCheck, Check, ChevronDown, ChevronRight, Copy, Search, X } from 'lucide-svelte';
   import {
-    getKnowledgeRecord,
     knowledgeDepartments,
     knowledgeProjects,
-    knowledgeRecords,
     knowledgeTypes,
     suggestedSearches
   } from '$lib/knowledge';
+  import { knowledgeStore } from '$lib/knowledge-store';
   import { searchKnowledge } from '$lib/search';
+  import { tourAction, tourState } from '$lib/tour';
 
   const storageKey = 'nexus-knowledge-investigation-v1';
   let query = suggestedSearches[0];
@@ -22,19 +23,43 @@
   let copyMessage = '';
   let storageMessage = '';
 
-  $: filteredResults = searchKnowledge(knowledgeRecords, query).filter(({ record }) =>
+  $: filteredResults = searchKnowledge($knowledgeStore, query).filter(({ record }) =>
     (!departmentFilter || record.department === departmentFilter)
     && (!projectFilter || record.project === projectFilter)
     && (!typeFilter || record.type === typeFilter)
   );
-  $: selectedRecord = selectedId ? getKnowledgeRecord(selectedId) : undefined;
-  $: savedRecords = savedIds.map(getKnowledgeRecord).filter((record) => record !== undefined);
+  $: selectedRecord = selectedId ? $knowledgeStore.find((record) => record.id === selectedId) : undefined;
+  $: savedRecords = savedIds.map((id) => $knowledgeStore.find((record) => record.id === id)).filter((record) => record !== undefined);
+
+  const guidedQuery = 'Our redesigned sensor housing is overheating near the PCB during extended operation. Has another team encountered this?';
 
   onMount(() => {
+    const recordFromUrl = $page.url.searchParams.get('record');
+    if (recordFromUrl && $knowledgeStore.some((record) => record.id === recordFromUrl)) {
+      query = $knowledgeStore.find((record) => record.id === recordFromUrl)?.title ?? query;
+      selectedId = recordFromUrl;
+    }
+    const unsubscribeAction = tourAction.subscribe((action) => {
+      if (action === 'run-example-search') {
+        query = guidedQuery;
+        selectedId = '';
+      } else if (action === 'open-top-result') {
+        selectedId = filteredResults[0]?.record.id ?? '';
+      } else if (action === 'open-created-record' && $tourState.createdRecordId) {
+        const record = $knowledgeStore.find((candidate) => candidate.id === $tourState.createdRecordId);
+        if (record) {
+          query = record.title;
+          selectedId = record.id;
+        }
+      } else if (action === 'close-detail') {
+        selectedId = '';
+      }
+      if (action) tourAction.set(null);
+    });
     try {
       const stored: unknown = JSON.parse(localStorage.getItem(storageKey) ?? '[]');
       if (Array.isArray(stored) && stored.every((id) => typeof id === 'string')) {
-        savedIds = stored.filter((id) => getKnowledgeRecord(id) !== undefined);
+        savedIds = stored.filter((id) => $knowledgeStore.some((record) => record.id === id));
       } else {
         storageMessage = 'Saved investigations could not be read because the stored data has an unexpected format.';
       }
@@ -43,6 +68,8 @@
         ? `Saved investigations could not be read: ${error.message}`
         : 'Saved investigations could not be read from this browser.';
     }
+
+    return unsubscribeAction;
   });
 
   function isSaved(id: string) {
@@ -107,14 +134,14 @@
     <div role="alert" class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{storageMessage}</div>
   {/if}
 
-  <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-panel md:p-5" aria-label="Search and filter engineering knowledge">
+  <section data-tour="discovery-search" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-panel md:p-5" aria-label="Search and filter engineering knowledge">
     <label for="knowledge-query" class="mb-2 block text-sm font-semibold text-slate-800">Describe the engineering problem</label>
     <div class="flex flex-col gap-3 md:flex-row">
       <div class="relative min-w-0 flex-1">
         <Search size={18} class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input id="knowledge-query" bind:value={query} class="w-full rounded-xl border border-slate-300 bg-slate-50 py-3 pl-10 pr-3 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100" placeholder="e.g. Our sensor housing is overheating near the PCB…" />
       </div>
-      <button class="rounded-xl bg-teal-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-800" on:click={() => (selectedId = filteredResults[0]?.record.id ?? '')}>Find related knowledge</button>
+      <button class="min-h-11 w-full rounded-xl bg-teal-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 md:w-auto" on:click={() => (selectedId = filteredResults[0]?.record.id ?? '')}>Find related knowledge</button>
     </div>
 
     <div class="mt-4 flex flex-wrap items-center gap-2">
@@ -124,7 +151,9 @@
       {/each}
     </div>
 
-    <div class="mt-5 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto]">
+    <details class="mt-5 border-t border-slate-100 pt-3" open>
+      <summary class="flex cursor-pointer list-none items-center gap-2 py-1 text-sm font-semibold text-slate-700"><ChevronDown size={16} />Filters<span class="text-xs font-normal text-slate-500">(apply immediately)</span></summary>
+    <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto]">
       <label class="text-xs font-medium text-slate-600">Department
         <select bind:value={departmentFilter} class="mt-1 block w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">
           <option value="">All departments</option>
@@ -145,6 +174,7 @@
       </label>
       <button class="self-end rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50" on:click={clearFilters}>Clear filters</button>
     </div>
+    </details>
   </section>
 
   <div class={`grid items-start gap-5 ${selectedRecord ? 'lg:grid-cols-[minmax(0,1.2fr)_minmax(330px,0.8fr)]' : ''}`}>
@@ -158,7 +188,7 @@
       </div>
 
       {#each filteredResults as result, index (result.record.id)}
-        <article class={`rounded-2xl border bg-white p-4 shadow-panel transition md:p-5 ${selectedId === result.record.id ? 'border-teal-400 ring-2 ring-teal-100' : 'border-slate-200 hover:border-slate-300'}`}>
+        <article data-tour={index === 0 ? 'top-search-result' : undefined} class={`min-w-0 rounded-2xl border bg-white p-4 shadow-panel transition md:p-5 ${selectedId === result.record.id ? 'border-teal-400 ring-2 ring-teal-100' : 'border-slate-200 hover:border-slate-300'}`}>
           <div class="flex items-start gap-3">
             <div class="min-w-0 flex-1">
               <div class="flex flex-wrap items-center gap-2">
@@ -220,7 +250,7 @@
     </section>
 
     {#if selectedRecord}
-      <aside class="min-w-0 rounded-2xl border border-slate-200 bg-white shadow-panel lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto" aria-label="Knowledge record details">
+      <aside data-tour="knowledge-detail-panel" aria-label="Knowledge record details" class="fixed inset-0 z-40 min-w-0 overflow-y-auto rounded-none border border-slate-200 bg-white shadow-panel lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:rounded-2xl">
         <div class="sticky top-0 z-10 rounded-t-2xl border-b border-slate-100 bg-white/95 p-4 backdrop-blur md:p-5">
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
@@ -240,14 +270,31 @@
         </div>
 
         <div class="space-y-5 p-4 md:p-5">
+          {#if selectedRecord.sourceType === 'Manual contribution'}
+            <div class="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-900">Manual contribution · stored only in this browser</div>
+          {/if}
           <section><h3 class="text-xs font-semibold uppercase tracking-[0.13em] text-slate-500">Original problem</h3><p class="mt-2 text-sm leading-6 text-slate-800">{selectedRecord.problem}</p></section>
+          {#if selectedRecord.detailedContext}<section><h3 class="text-xs font-semibold uppercase tracking-[0.13em] text-slate-500">Detailed context</h3><p class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-800">{selectedRecord.detailedContext}</p></section>{/if}
           <section><h3 class="text-xs font-semibold uppercase tracking-[0.13em] text-slate-500">Root cause</h3><p class="mt-2 text-sm leading-6 text-slate-800">{selectedRecord.rootCause}</p></section>
           <section class="rounded-xl border border-teal-100 bg-teal-50/70 p-4"><h3 class="text-xs font-semibold uppercase tracking-[0.13em] text-teal-900">Previously identified solution</h3><p class="mt-2 text-sm leading-6 text-slate-800">{selectedRecord.solution}</p></section>
+          {#if selectedRecord.stepsTaken}<section><h3 class="text-xs font-semibold uppercase tracking-[0.13em] text-slate-500">Steps taken</h3><p class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700">{selectedRecord.stepsTaken}</p></section>{/if}
           <section>
             <div class="flex items-center justify-between gap-2"><h3 class="text-xs font-semibold uppercase tracking-[0.13em] text-slate-500">Validation evidence</h3><span class={`rounded-full px-2 py-1 text-[11px] font-semibold ${selectedRecord.validation.status === 'Validated' ? 'bg-emerald-100 text-emerald-800' : selectedRecord.validation.status === 'Unresolved' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'}`}>{selectedRecord.validation.status}</span></div>
             <p class="mt-2 text-sm leading-6 text-slate-700">{selectedRecord.validation.summary}</p>
           </section>
           <section><h3 class="text-xs font-semibold uppercase tracking-[0.13em] text-slate-500">Lessons learned</h3><p class="mt-2 text-sm leading-6 text-slate-700">{selectedRecord.lessons}</p></section>
+          {#if selectedRecord.recommendations}<section><h3 class="text-xs font-semibold uppercase tracking-[0.13em] text-slate-500">Reusable recommendations</h3><p class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700">{selectedRecord.recommendations}</p></section>{/if}
+          {#if selectedRecord.investigation || selectedRecord.attemptedApproaches || selectedRecord.unsuccessfulApproaches || selectedRecord.blocker || selectedRecord.supportNeeded || selectedRecord.nextSteps}
+            <section class="rounded-xl border border-amber-100 bg-amber-50/70 p-4"><h3 class="text-xs font-semibold uppercase tracking-[0.13em] text-amber-900">Open investigation</h3><div class="mt-3 space-y-3 text-sm leading-6 text-slate-700">
+              {#if selectedRecord.investigation}<p><strong>Investigated:</strong> {selectedRecord.investigation}</p>{/if}
+              {#if selectedRecord.attemptedApproaches}<p><strong>Approaches attempted:</strong> {selectedRecord.attemptedApproaches}</p>{/if}
+              {#if selectedRecord.unsuccessfulApproaches}<p><strong>What did not work:</strong> {selectedRecord.unsuccessfulApproaches}</p>{/if}
+              {#if selectedRecord.blocker}<p><strong>Current blocker:</strong> {selectedRecord.blocker}</p>{/if}
+              {#if selectedRecord.supportNeeded}<p><strong>Support needed:</strong> {selectedRecord.supportNeeded}</p>{/if}
+              {#if selectedRecord.nextSteps}<p><strong>Suggested next steps:</strong> {selectedRecord.nextSteps}</p>{/if}
+              {#if selectedRecord.relatedDepartments?.length}<p><strong>Teams to involve:</strong> {selectedRecord.relatedDepartments.join(', ')}</p>{/if}
+            </div></section>
+          {/if}
 
           <dl class="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3 text-xs">
             <div><dt class="text-slate-500">Department</dt><dd class="mt-1 font-medium text-slate-800">{selectedRecord.department}</dd></div>
@@ -263,11 +310,12 @@
           </section>
           <section><h3 class="text-xs font-semibold uppercase tracking-[0.13em] text-slate-500">Related knowledge</h3>
             {#if selectedRecord.relatedRecordIds.length}
-              <ul class="mt-2 space-y-2">{#each selectedRecord.relatedRecordIds as relatedId}{@const relatedRecord = getKnowledgeRecord(relatedId)}{#if relatedRecord}<li><button class="group flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 p-3 text-left hover:border-teal-300 hover:bg-teal-50" on:click={() => { selectedId = relatedRecord.id; copyMessage = ''; }}><span class="min-w-0"><span class="block text-sm font-medium text-slate-800 group-hover:text-teal-900">{relatedRecord.title}</span><span class="mt-1 block text-xs text-slate-500">{relatedRecord.department} · {relatedRecord.project}</span></span><ChevronRight size={16} class="shrink-0 text-slate-400" /></button></li>{/if}{/each}</ul>
+              <ul class="mt-2 space-y-2">{#each selectedRecord.relatedRecordIds as relatedId}{@const relatedRecord = $knowledgeStore.find((record) => record.id === relatedId)}{#if relatedRecord}<li><button class="group flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 p-3 text-left hover:border-teal-300 hover:bg-teal-50" on:click={() => { selectedId = relatedRecord.id; copyMessage = ''; }}><span class="min-w-0"><span class="block text-sm font-medium text-slate-800 group-hover:text-teal-900">{relatedRecord.title}</span><span class="mt-1 block text-xs text-slate-500">{relatedRecord.department} · {relatedRecord.project}</span></span><ChevronRight size={16} class="shrink-0 text-slate-400" /></button></li>{/if}{/each}</ul>
             {:else}<p class="mt-2 text-sm text-slate-500">No related records are listed.</p>{/if}
           </section>
           <section><h3 class="text-xs font-semibold uppercase tracking-[0.13em] text-slate-500">Evidence & provenance</h3>
-            <p class="mt-2 text-xs leading-5 text-slate-600">Fictional Auron Mobility demonstration content. Source references below are illustrative and are not links to real company systems.</p>
+            <p class="mt-2 text-xs leading-5 text-slate-600">{selectedRecord.sourceType === 'Manual contribution' ? 'Manually contributed in this browser. Evidence references are user-provided and have not been independently verified.' : 'Fictional Auron Mobility demonstration content. Source references below are illustrative and are not links to real company systems.'}</p>
+            {#if selectedRecord.contributorName}<p class="mt-2 text-xs text-slate-600">Contributed by {selectedRecord.contributorName}{#if selectedRecord.occurredAt} · Occurred {selectedRecord.occurredAt}{/if}</p>{/if}
             <ul class="mt-3 space-y-2">{#each selectedRecord.sources as source}<li class="rounded-lg bg-slate-50 p-3"><div class="text-sm font-medium text-slate-800">{source.title}</div><div class="mt-1 text-xs text-slate-500">{source.kind} · {source.reference}</div></li>{/each}</ul>
           </section>
           <div class="flex flex-wrap gap-1">{#each selectedRecord.tags as tag}<span class="rounded-full bg-slate-100 px-2 py-1 text-[11px] text-slate-600">{tag}</span>{/each}</div>
